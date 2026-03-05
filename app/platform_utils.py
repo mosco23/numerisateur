@@ -22,6 +22,27 @@ def print_pdf(pdf_path, printer_name):
         return result.returncode == 0, result.stderr
 
 
+def is_scanner_available():
+    """Vérifie si un scanner est disponible sur le système."""
+    if is_windows():
+        try:
+            import comtypes.client
+            wia_manager = comtypes.client.CreateObject("WIA.DeviceManager")
+            devices = wia_manager.DeviceInfos
+            for i in range(1, devices.Count + 1):
+                if devices.Item(i).Type == 1:  # scanner
+                    return True
+            return False
+        except Exception:
+            return False
+    else:
+        result = subprocess.run(
+            ["scanimage", "-L"],
+            capture_output=True, text=True
+        )
+        return result.returncode == 0 and "device" in result.stdout.lower()
+
+
 def scan_page(output_path, fmt, resolution):
     """Scanne une page et la sauvegarde. Retourne (success, error_message)."""
     if is_windows():

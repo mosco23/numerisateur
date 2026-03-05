@@ -14,7 +14,7 @@ from reportlab.lib.units import mm
 
 from app.utils import add_shadow, make_field_label
 from app.workers import ScanWorker
-from app.platform_utils import print_pdf
+from app.platform_utils import print_pdf, is_scanner_available
 
 
 class PrintTab(QWidget):
@@ -24,16 +24,25 @@ class PrintTab(QWidget):
         super().__init__()
         self.scan_folder = None
         self.scan_worker = None
+        self.scanner_available = is_scanner_available()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(14)
 
         # Info
-        info = QLabel(
-            "Les feuilles sont dans l'imprimante.\n"
-            "Les numéros seront imprimés en haut de chaque feuille, puis les feuilles seront numérisées."
-        )
+        if self.scanner_available:
+            info_text = (
+                "Les feuilles sont dans l'imprimante.\n"
+                "Les numéros seront imprimés en haut de chaque feuille, puis les feuilles seront numérisées."
+            )
+        else:
+            info_text = (
+                "Les feuilles sont dans l'imprimante.\n"
+                "Les numéros seront imprimés en haut de chaque feuille.\n"
+                "(Aucun scanner détecté — mode impression seule)"
+            )
+        info = QLabel(info_text)
         info.setStyleSheet(
             "color: #6c63ff; font-size: 14px; padding: 16px; "
             "background-color: #f0eeff; border-radius: 10px; border: 1px solid #d8d5ff;"
@@ -143,6 +152,9 @@ class PrintTab(QWidget):
         add_shadow(scan_group)
         layout.addWidget(scan_group)
 
+        if not self.scanner_available:
+            scan_group.setVisible(False)
+
         # Progress
         self.progress_label = QLabel("")
         self.progress_label.setStyleSheet("color: #6c63ff; font-size: 13px; font-weight: bold;")
@@ -158,7 +170,7 @@ class PrintTab(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(12)
 
-        self.print_btn = QPushButton("Imprimer et numériser")
+        self.print_btn = QPushButton("Imprimer" if not self.scanner_available else "Imprimer et numériser")
         self.print_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.print_btn.setMinimumHeight(50)
         self.print_btn.clicked.connect(self.do_print_and_scan)
@@ -190,7 +202,7 @@ class PrintTab(QWidget):
                                 "Le numéro de début doit être inférieur ou égal au numéro de fin.")
             return
 
-        if not self.scan_folder:
+        if self.scanner_available and not self.scan_folder:
             QMessageBox.warning(self, "Dossier manquant",
                                 "Veuillez choisir un dossier de destination pour la numérisation.")
             return
@@ -241,13 +253,16 @@ class PrintTab(QWidget):
             except OSError:
                 pass
 
-        # Lancer la numérisation
-        QMessageBox.information(self, "Impression envoyée",
-            f"Numérotation de {start} à {end} envoyée à l'imprimante.\n\n"
-            "Récupérez les feuilles imprimées et placez-les dans le scanner.\n"
-            "La numérisation va commencer.")
-
-        self.start_scanning(start, end)
+        if self.scanner_available:
+            # Lancer la numérisation
+            QMessageBox.information(self, "Impression envoyée",
+                f"Numérotation de {start} à {end} envoyée à l'imprimante.\n\n"
+                "Récupérez les feuilles imprimées et placez-les dans le scanner.\n"
+                "La numérisation va commencer.")
+            self.start_scanning(start, end)
+        else:
+            QMessageBox.information(self, "Impression envoyée",
+                f"Numérotation de {start} à {end} envoyée à l'imprimante.")
 
     def start_scanning(self, start, end):
         self.print_btn.setEnabled(False)
