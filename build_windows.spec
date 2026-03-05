@@ -5,11 +5,13 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('assets/logo.png', 'assets'),
+        ('assets/logo.ico', 'assets'),
+    ],
     hiddenimports=[
         'PyQt6', 'PyPDF2', 'reportlab',
         'comtypes', 'comtypes.client',
-        'win32api', 'win32print',
     ],
     hookspath=[],
     noarchive=False,
@@ -28,5 +30,5 @@ exe = EXE(
     strip=False,
     upx=True,
     console=False,
-    icon=None,
+    icon='assets/logo.ico',
 )
