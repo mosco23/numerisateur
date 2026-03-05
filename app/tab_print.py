@@ -1,20 +1,16 @@
 import os
-import tempfile
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QSpinBox, QComboBox, QGroupBox, QProgressBar, QMessageBox
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter, QFont
 from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
-
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import mm
 
 from app.utils import add_shadow, make_field_label
 from app.workers import ScanWorker
-from app.platform_utils import print_pdf, is_scanner_available
+from app.platform_utils import is_scanner_available
 
 
 class PrintTab(QWidget):
@@ -211,47 +207,49 @@ class PrintTab(QWidget):
         font_size = self.font_spin.value()
         margin_top = self.margin_spin.value()
 
-        # Générer le PDF de numérotation
-        tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-        tmp_path = tmp.name
-        tmp.close()
+        # Dialogue d'impression natif (cross-platform)
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        dialog = QPrintDialog(printer, self)
+        dialog.setWindowTitle("Imprimer la numérotation")
+        if dialog.exec() != QPrintDialog.DialogCode.Accepted:
+            return
+
+        painter = QPainter()
+        if not painter.begin(printer):
+            QMessageBox.critical(self, "Erreur",
+                "Impossible d'accéder à l'imprimante.")
+            return
 
         try:
-            page_width, page_height = A4
-            c_pdf = canvas.Canvas(tmp_path, pagesize=A4)
-            for num in range(start, end + 1):
-                c_pdf.setFont("Helvetica", font_size)
+            dpi = printer.resolution()
+            page_rect = printer.pageRect(QPrinter.Unit.DevicePixel)
+            page_width_px = page_rect.width()
+
+            font = QFont("Helvetica", font_size)
+            painter.setFont(font)
+
+            margin_top_px = margin_top * dpi / 25.4
+            margin_side_px = 30 * dpi / 25.4
+
+            for i, num in enumerate(range(start, end + 1)):
+                if i > 0:
+                    printer.newPage()
+
                 text = str(num)
-                tw = c_pdf.stringWidth(text, "Helvetica", font_size)
-                y = page_height - margin_top * mm
+                fm = painter.fontMetrics()
+                tw = fm.horizontalAdvance(text)
+                y = int(margin_top_px + fm.ascent())
+
                 if position == "gauche":
-                    x = 30 * mm
+                    x = int(margin_side_px)
                 elif position == "droite":
-                    x = page_width - 30 * mm - tw
+                    x = int(page_width_px - margin_side_px - tw)
                 else:
-                    x = (page_width - tw) / 2
-                c_pdf.drawString(x, y, text)
-                c_pdf.showPage()
-            c_pdf.save()
+                    x = int((page_width_px - tw) / 2)
 
-            # Dialogue d'impression natif (cross-platform)
-            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-            dialog = QPrintDialog(printer, self)
-            dialog.setWindowTitle("Imprimer la numérotation")
-            if dialog.exec() != QPrintDialog.DialogCode.Accepted:
-                return
-
-            printer_name = printer.printerName()
-            success, err = print_pdf(tmp_path, printer_name)
-            if not success:
-                QMessageBox.critical(self, "Erreur",
-                    f"Erreur lors de l'impression :\n{err}")
-                return
+                painter.drawText(x, y, text)
         finally:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
+            painter.end()
 
         if self.scanner_available:
             # Lancer la numérisation
