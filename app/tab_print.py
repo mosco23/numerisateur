@@ -95,15 +95,6 @@ class PrintTab(QWidget):
         col_font.addWidget(self.font_spin)
         options_layout.addLayout(col_font)
 
-        col_margin = QVBoxLayout()
-        col_margin.addWidget(make_field_label("Marge haut (mm)"))
-        self.margin_spin = QSpinBox()
-        self.margin_spin.setMinimum(5)
-        self.margin_spin.setMaximum(100)
-        self.margin_spin.setValue(15)
-        col_margin.addWidget(self.margin_spin)
-        options_layout.addLayout(col_margin)
-
         add_shadow(options_group)
         layout.addWidget(options_group)
 
@@ -205,7 +196,6 @@ class PrintTab(QWidget):
 
         position = self.position_combo.currentText().lower()
         font_size = self.font_spin.value()
-        margin_top = self.margin_spin.value()
 
         # Dialogue d'impression natif (cross-platform)
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
@@ -228,7 +218,7 @@ class PrintTab(QWidget):
             font = QFont("Helvetica", font_size)
             painter.setFont(font)
 
-            margin_top_px = margin_top * dpi / 25.4
+            margin_top_px = 15 * dpi / 25.4
             margin_side_px = 30 * dpi / 25.4
 
             for i, num in enumerate(range(start, end + 1)):
