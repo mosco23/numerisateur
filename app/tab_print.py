@@ -235,7 +235,7 @@ class PrintTab(QWidget):
             c_pdf.save()
 
             # Dialogue d'impression natif (cross-platform)
-            printer = QPrinter(QPrinter.Mode.HighResolution)
+            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
             dialog = QPrintDialog(printer, self)
             dialog.setWindowTitle("Imprimer la numérotation")
             if dialog.exec() != QPrintDialog.DialogCode.Accepted:
