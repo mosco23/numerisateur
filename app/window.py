@@ -1,11 +1,10 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QLabel, QTabWidget
+    QMainWindow, QWidget, QVBoxLayout, QLabel
 )
 from PyQt6.QtCore import Qt
 
 from app.styles import STYLE_SHEET
 from app.tab_print import PrintTab
-from app.tab_pdf import PdfTab
 
 
 class MainWindow(QMainWindow):
@@ -33,8 +32,4 @@ class MainWindow(QMainWindow):
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(subtitle)
 
-        # Tabs
-        tabs = QTabWidget()
-        tabs.addTab(PrintTab(), "Impression")
-        tabs.addTab(PdfTab(), "PDF Existant")
-        main_layout.addWidget(tabs)
+        main_layout.addWidget(PrintTab())
