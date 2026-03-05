@@ -15,12 +15,12 @@ if errorlevel 1 (
 
 :: Creer un environnement virtuel
 echo [1/5] Creation de l'environnement virtuel...
-if not exist .venv (
-    python -m venv .venv
+if not exist venv (
+    python -m venv venv
 )
 
 :: Activer l'environnement virtuel
-call .venv\Scripts\activate.bat
+call venv\Scripts\activate.bat
 
 :: Installer les dependances
 echo [2/5] Installation des dependances...

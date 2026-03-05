@@ -218,6 +218,7 @@ class PrintTab(QWidget):
             font = QFont("Helvetica", font_size)
             painter.setFont(font)
 
+            page_height_px = page_rect.height()
             margin_top_px = 15 * dpi / 25.4
             margin_side_px = 30 * dpi / 25.4
 
@@ -228,7 +229,6 @@ class PrintTab(QWidget):
                 text = str(num)
                 fm = painter.fontMetrics()
                 tw = fm.horizontalAdvance(text)
-                y = int(margin_top_px + fm.ascent())
 
                 if position == "gauche":
                     x = int(margin_side_px)
@@ -237,7 +237,13 @@ class PrintTab(QWidget):
                 else:
                     x = int((page_width_px - tw) / 2)
 
-                painter.drawText(x, y, text)
+                # Numéro en haut
+                y_top = int(margin_top_px + fm.ascent())
+                painter.drawText(x, y_top, text)
+
+                # Numéro au milieu (pour couper la feuille en deux)
+                y_mid = int(page_height_px / 2 + margin_top_px + fm.ascent())
+                painter.drawText(x, y_mid, text)
         finally:
             painter.end()
 
